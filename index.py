@@ -3,10 +3,12 @@ from llama_index.llms.ollama import Ollama
 from pathlib import Path
 import qdrant_client
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.storage.storage_context import StorageContext
-from llama_index import (VectorStoreIndex, ServiceContext)
+from llama_index.core import (VectorStoreIndex, 
+                              StorageContext, 
+                              SimpleDirectoryReader, 
+                              Settings)
 from llama_index.readers.file import HTMLTagReader
-from llama_index.core import SimpleDirectoryReader
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # load the HTML files
 parser = HTMLTagReader()
@@ -21,15 +23,28 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
 # Initialize the LLM
 llm = Ollama(model="llama3")
-service_context = ServiceContext.from_defaults(llm=llm, embed_model="local")
+Settings.llm = llm
+Settings.embed_model = "local"
 
 #Create an index to embed the documents and store them in the vector store
-index = VectorStoreIndex.from_documents(documents, service_context=service_context, 
-                                        storage_context=storage_context)
+index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, 
+                                        embed_model=embed_model)
 
 # Query the index
-query_engine = index.as_query_engine()
+query_engine = index.as_query_engine(llm=llm)
 
-response = query_engine.query("What is bioconductor")
+response = query_engine.query("What must a Bioconductor package contain  before it can be accepted for submission")
 
 print(response)
+
+
+
+# pip install llama-index-embeddings-huggingface
+# pip install llama-index-storage 
+# pip install llama-index-storage-storage-context
+# pip install llama-index-vector-stores-qdrant
+# pip install qdrant_client
+# pip install llama-index-llms-ollama
+# pip install llama-index
+# ollama run llama3
+# sudo snap install ollama
