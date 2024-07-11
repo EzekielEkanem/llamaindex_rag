@@ -24,7 +24,9 @@ storage_context = StorageContext.from_defaults(vector_store=vector_store)
 # Initialize the LLM
 llm = Ollama(model="llama3")
 Settings.llm = llm
-Settings.embed_model = "local"
+embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-small-en-v1.5")
+Settings.embed_model = embed_model
 
 #Create an index to embed the documents and store them in the vector store
 index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, 
