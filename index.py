@@ -3,23 +3,13 @@ from llama_index.llms.ollama import Ollama
 from pathlib import Path
 import qdrant_client
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.core import (VectorStoreIndex, 
-                              StorageContext, 
-                              SimpleDirectoryReader, 
-                              Settings)
+from llama_index.core import (VectorStoreIndex,
+                              StorageContext,
+                              SimpleDirectoryReader,
+                              Settings,
+                              load_index_from_storage)
 from llama_index.readers.file import HTMLTagReader
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
-# load the HTML files
-parser = HTMLTagReader()
-file_extractor = {".html": parser}
-documents = SimpleDirectoryReader("./Bioc_contribution_downloads/", 
-                                  file_extractor=file_extractor).load_data()
-
-# Initialize the vector store
-client = qdrant_client.QdrantClient(path="./qdrant_data")
-vector_store = QdrantVectorStore(client=client, collection_name="contributions")
-storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
 # Initialize the LLM
 llm = Ollama(model="llama3")
@@ -27,10 +17,24 @@ Settings.llm = llm
 embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-small-en-v1.5")
 Settings.embed_model = embed_model
+Settings.chunk_size = 1024
+Settings.context_window = 3800
 
-#Create an index to embed the documents and store them in the vector store
-index = VectorStoreIndex.from_documents(documents, storage_context=storage_context, 
-                                        embed_model=embed_model)
+# Check if the storage exists
+PERSIST_DIR = "./qdrant_data"
+if not Path(PERSIST_DIR).is_dir():
+    # load the HTML files
+    parser = HTMLTagReader()
+    file_extractor = {".html": parser}
+    documents = SimpleDirectoryReader("./Bioc_contribution_downloads/",
+                                  file_extractor=file_extractor).load_data()
+    #Create an index to embed the documents and store them in the vector store
+    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
+    index.storage_context.persist(persist_dir=PERSIST_DIR)
+else:
+    #load the existing index
+    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+    index = load_index_from_storage(storage_context)
 
 # Query the index
 query_engine = index.as_query_engine(llm=llm)
