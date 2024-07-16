@@ -17,17 +17,18 @@ Settings.llm = llm
 embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-small-en-v1.5")
 Settings.embed_model = embed_model
-Settings.chunk_size = 1024
-Settings.context_window = 3800
+# Settings.chunk_size = 1024
+# Settings.context_window = 3800
 
 # Check if the storage exists
 PERSIST_DIR = "./qdrant_data"
 if not Path(PERSIST_DIR).is_dir():
     # load the HTML files
     parser = HTMLTagReader()
-    file_extractor = {".html": parser}
-    documents = SimpleDirectoryReader("./Bioc_contribution_downloads/",
-                                  file_extractor=file_extractor).load_data()
+    doc_path = "/home/ubuntu/llamaindex_rag/Bioc_contribution_downloads"
+    # file_extractor = {".html": parser}
+    documents = SimpleDirectoryReader(input_dir=doc_path,
+            required_exts=[".html"], recursive=True).load_data()
     #Create an index to embed the documents and store them in the vector store
     index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
     index.storage_context.persist(persist_dir=PERSIST_DIR)
