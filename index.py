@@ -12,7 +12,7 @@ from llama_index.readers.file import HTMLTagReader
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # Initialize the LLM
-llm = Ollama(model="llama3", request_timeout=500)
+llm = Ollama(base_url="http://localhost:11430", model="llama3.1", request_timeout=500)
 Settings.llm = llm
 embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-small-en-v1.5")
@@ -51,8 +51,8 @@ Answer from the llm was {response_1}
 Supporting Documents: {response_1.source_nodes}
 Task: 
 Please, evaluate the correctness, relevance, and completeness of the answer and the 
-source nodes provided above. Meticulously identify any errors, suggest improvements, 
-and provide your version of the answer
+source nodes provided above. Is the above response correct? what else is missing from 
+the response? what can you add, if necessary? Please, meticulously provide these answers
 """
 
 chat_engine_2 = index.as_chat_engine(llm=llm)
@@ -72,11 +72,10 @@ revised_text = f"""
 The question was, {question}.
 The answer you gave was: {response_1}
 Feedback from the review: {response_2}
-Task: 
+Task:
 Please, refine your answer by incorporating this feedback and adding more information where necessary
 """
 
-chat_engine_3 = index.as_chat_engine(llm=llm)
-response_3 = chat_engine_3.chat(revised_text)
+response_3 = chat_engine_1.chat(revised_text)
 
 print(f"llm response 3:\n {response_3}")
