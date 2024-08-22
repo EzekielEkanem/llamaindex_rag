@@ -12,11 +12,11 @@ from llama_index.readers.file import HTMLTagReader
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # Initialize the LLM
-llm = Ollama(model="llama3")
+llm = Ollama(model="llama3", request_timeout=500)
 Settings.llm = llm
 embed_model = HuggingFaceEmbedding(
     model_name="BAAI/bge-small-en-v1.5")
-Settings.embed_model = embed_model
+Settings.embed_model = embed_model   
 # Settings.chunk_size = 1024
 # Settings.context_window = 3800
 
@@ -30,7 +30,8 @@ if not Path(PERSIST_DIR).is_dir():
     documents = SimpleDirectoryReader(input_dir=doc_path,
             required_exts=[".html"], recursive=True).load_data()
     #Create an index to embed the documents and store them in the vector store
-    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
+    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model, 
+                                            show_progress=True)
     index.storage_context.persist(persist_dir=PERSIST_DIR)
 else:
     #load the existing index
@@ -38,20 +39,44 @@ else:
     index = load_index_from_storage(storage_context)
 
 # Query the index
-query_engine = index.as_query_engine(llm=llm)
+question = "What must a Bioconductor package contain  before it can be accepted for submission"
+chat_engine_1 = index.as_chat_engine(llm=llm)
 
-response = query_engine.query("What must a Bioconductor package contain  before it can be accepted for submission")
+response_1 = chat_engine_1.chat(question)
+print(f"llm response 1:\n {response_1}")
 
-print(response)
+input_text = f"""
+The question was, {question}.
+Answer from the llm was {response_1}
+Supporting Documents: {response_1.source_nodes}
+Task: 
+Please, evaluate the correctness, relevance, and completeness of the answer and the 
+source nodes provided above. Meticulously identify any errors, suggest improvements, 
+and provide your version of the answer
+"""
+
+chat_engine_2 = index.as_chat_engine(llm=llm)
+response_2 = chat_engine_2.chat(input_text)
 
 
 
-# pip install llama-index-embeddings-huggingface
-# pip install llama-index-storage 
-# pip install llama-index-storage-storage-context
-# pip install llama-index-vector-stores-qdrant
-# pip install qdrant_client
-# pip install llama-index-llms-ollama
-# pip install llama-index
-# ollama run llama3
-# sudo snap install ollama
+# # stream chat
+# streaming_response = chat_engine.stream_chat("What must a Bioconductor package contain  before it can be accepted for submission")
+
+# for token in streaming_response.response_gen:
+#     print(token, end="")
+
+print(f"llm response 2:\n {response_2}")
+
+revised_text = f"""
+The question was, {question}.
+The answer you gave was: {response_1}
+Feedback from the review: {response_2}
+Task: 
+Please, refine your answer by incorporating this feedback and adding more information where necessary
+"""
+
+chat_engine_3 = index.as_chat_engine(llm=llm)
+response_3 = chat_engine_3.chat(revised_text)
+
+print(f"llm response 3:\n {response_3}")
