@@ -94,3 +94,6 @@ for file in files:
 
 # for token in streaming_response.response_gen:
 #     print(token, end="")
+
+# git reset --hard origin/main
+# git pull origin main
