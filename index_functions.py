@@ -13,7 +13,7 @@ def init_llms(models: list, embed_model_name: str, base_url: str = "http://local
     """
     method that initializes the list of llms passed into it and returns a list 
     of initialized llms as well as the embedding model used
-
+    
     Args:
 
     models (list): a list of llms to be initialized
