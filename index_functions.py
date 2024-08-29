@@ -24,13 +24,13 @@ def init_llms(models: list, embed_model_name: str, base_url: str = "http://local
 
     request_timeout (int): the time (in seconds) that ollama should be given to initialize an llm
     """
-    llms = []
+    llms = {}
     for model in models:
         # For now we are dealing with only llama and gemma. We can expand this condition
         # to accommodate more models
         if "llama" or "gemma" in model:
             llm = Ollama(base_url=base_url, model=model, request_timeout=request_timeout)
-        llms.append(llm)
+        llms[model] = llm
     embed_model = HuggingFaceEmbedding(
         model_name=embed_model_name)
     Settings.embed_model = embed_model   
@@ -111,7 +111,7 @@ def query_llm(package_query_location: str, llm, index, judge_llm: str):
         If the R file is well written, commend on areas where you think the writter of the file did 
         and excellent job
         """
-        chat_engine_1 = index.as_chat_engine(llm=llm)
+        chat_engine_1 = index.as_chat_engine(llm=llm, max_iterations=100)
 
         response_1 = chat_engine_1.chat(question)
         print(f"first response: {response_1}")
@@ -125,32 +125,33 @@ def query_llm(package_query_location: str, llm, index, judge_llm: str):
         Please, refine your answer by incorporating this feedback and adding more information where necessary
         """
         # refine the response based on the feedback provided by the judge llm
-        response_2 = chat_engine_1.chat(revised_text)
+        chat_engine_3 = index.as_chat_engine(llm=llm, max_iterations=100)
+        response_2 = chat_engine_3.chat(revised_text)
         print(f"polished response: {reviewed_response}")   
         responses[str(file)] = response_2
     return responses
 
 def query_llms(package_query_location: str, llms: list, index, judge_llm: str):
     """
-    method that takes queries llms to review certain packages and returns a list
+    method that queries llms to review certain packages and returns a list
     of llm responses
 
     Args:
 
     package_query_location (str): the location of packages to be evaluated
 
-    llms (list): the list of llms that will do the review
+    llms (dict): the dictionary of llms that will do the review
 
     index: the vector database of our RAG store (in this case the vector database for 
         the Bioconductor guidelines)
 
     judge_llm (str): the llm used as a judge to review the llm responses
     """
-    llms_responses = {}
+    llms_responses = {} 
     for llm in llms:
         print(f"llm evaluation: {llm} \n")
-        responses = query_llm(package_query_location, llm, index, judge_llm)
-        llms_responses[llm] = [responses]
+        responses = query_llm(package_query_location, llms[llm], index, judge_llm)
+        llms_responses[llm] = responses
     return llms_responses
 
 def review_llm(question: str, response: str, llm: str, index):
@@ -169,8 +170,8 @@ def review_llm(question: str, response: str, llm: str, index):
     index: the vector database of our RAG store (in this case the vector database for 
         the Bioconductor guidelines)
     """
-    llm = Ollama(base_url="http://localhost:11430", model=llm, request_timeout=500)
-    chat_engine_2 = index.as_chat_engine(llm=llm)
+    judge_llm = Ollama(base_url="http://localhost:11430", model=llm, request_timeout=500)
+    chat_engine_2 = index.as_chat_engine(llm=judge_llm, max_iterations=100)
     print(f"judge_llm review: {llm}")
     input_text = f"""
     The question was, "{question}".

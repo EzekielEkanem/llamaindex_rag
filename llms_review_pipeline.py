@@ -20,7 +20,7 @@ judge_llm = "llama3.1:latest"
 # the evaluation of each llm
 llms_responses = query_llms(package_query_location, llms, index, judge_llm)
 # print each llm response
-for llm, responses in llms_responses:
+for llm, responses in llms_responses.items():
     print(llm + "\n")
-    for response in responses:
-        print(response)
+    for file, response in responses.items():
+        print(file + "\n" + response)
