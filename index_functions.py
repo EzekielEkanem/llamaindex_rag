@@ -9,11 +9,11 @@ from llama_index.core import (VectorStoreIndex,
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 def init_llms(models: list, embed_model_name: str, base_url: str = "http://localhost:11430",
-               request_timeout: int = 500):
+               request_timeout: int = 1000):
     """
     method that initializes the list of llms passed into it and returns a list 
     of initialized llms as well as the embedding model used
-    
+
     Args:
 
     models (list): a list of llms to be initialized
@@ -111,7 +111,7 @@ def query_llm(package_query_location: str, llm, index, judge_llm: str):
         If the R file is well written, commend on areas where you think the writter of the file did 
         and excellent job
         """
-        chat_engine_1 = index.as_chat_engine(llm=llm, max_iterations=100)
+        chat_engine_1 = index.as_chat_engine(llm=llm, max_iterations=1000)
 
         response_1 = chat_engine_1.chat(question)
         print(f"first response: {response_1}")
@@ -125,7 +125,7 @@ def query_llm(package_query_location: str, llm, index, judge_llm: str):
         Please, refine your answer by incorporating this feedback and adding more information where necessary
         """
         # refine the response based on the feedback provided by the judge llm
-        chat_engine_3 = index.as_chat_engine(llm=llm, max_iterations=100)
+        chat_engine_3 = index.as_chat_engine(llm=llm, max_iterations=1000)
         response_2 = chat_engine_3.chat(revised_text)
         print(f"polished response: {reviewed_response}")   
         responses[str(file)] = response_2
@@ -170,8 +170,8 @@ def review_llm(question: str, response: str, llm: str, index):
     index: the vector database of our RAG store (in this case the vector database for 
         the Bioconductor guidelines)
     """
-    judge_llm = Ollama(base_url="http://localhost:11430", model=llm, request_timeout=500)
-    chat_engine_2 = index.as_chat_engine(llm=judge_llm, max_iterations=100)
+    judge_llm = Ollama(base_url="http://localhost:11430", model=llm, request_timeout=1000)
+    chat_engine_2 = index.as_chat_engine(llm=judge_llm, max_iterations=1000)
     print(f"judge_llm review: {llm}")
     input_text = f"""
     The question was, "{question}".
