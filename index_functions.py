@@ -93,7 +93,9 @@ def query_llm(package_query_location: str, llm, index, judge_llm: str):
     Settings.llm = llm
     # get each file that we want to evaluate
     files = Path(package_query_location + "/R").glob("**/*.R")
+    files = list(files)
     vignette_files = Path(package_query_location + "/vignettes").glob("**/*.Rmd")
+    vignette_files = list(vignette_files)
     files.append(vignette_files)
     # make a dictionary of the responses for each file in the package
     responses = {}
